@@ -1,23 +1,23 @@
 package com.green.jwt.user;
 
 import com.green.jwt.config.CookieUtils;
-import com.green.jwt.config.JwtConst;
+import com.green.jwt.config.constant.JwtConst;
 import com.green.jwt.config.jwt.JwtTokenProvider;
 import com.green.jwt.config.jwt.JwtUser;
 import com.green.jwt.user.model.UserSelOne;
 import com.green.jwt.user.model.UserSignInReq;
 import com.green.jwt.user.model.UserSignInRes;
 import com.green.jwt.user.model.UserSignUpReq;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.validation.annotation.Validated;
 
-import java.time.Duration;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -64,6 +64,18 @@ public class UserService {
                 .id(userSelOne.getId())
                 .name(userSelOne.getName())
                 .build();
+    }
+
+    public String getAccessToken(HttpServletRequest req){
+        Cookie cookie = Optional.ofNullable(cookieUtils.getCookie(req,jwtConst.getRefreshTokenCookieName()))
+                .orElseThrow(() -> {
+                    throw new RuntimeException("AccessToken 을 재발행 할 수 없습니다.");
+                });
+
+        String refreshToken = cookie.getValue();
+        JwtUser jwtUser = jwtTokenProvider.getJwtUserFromToken(refreshToken);
+
+        return jwtTokenProvider.generateAccessToken(jwtUser);
     }
 }
 
